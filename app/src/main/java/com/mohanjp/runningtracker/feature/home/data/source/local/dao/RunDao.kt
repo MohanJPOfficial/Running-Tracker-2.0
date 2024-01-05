@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 interface RunDao {
 
     @Upsert
-    suspend fun insertRun(run: RunEntity)
+    suspend fun upsertRun(run: RunEntity)
 
     @Delete
     suspend fun deleteRun(run: RunEntity)
