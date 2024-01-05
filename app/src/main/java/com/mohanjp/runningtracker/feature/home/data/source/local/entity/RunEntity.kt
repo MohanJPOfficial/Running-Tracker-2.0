@@ -1,4 +1,4 @@
-package com.mohanjp.runningtracking.feature.home.data.source.local.entity
+package com.mohanjp.runningtracker.feature.home.data.source.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -23,8 +23,8 @@ data class RunEntity(
     @ColumnInfo(name = RunTable.Column.DISTANCE_IN_METERS)
     val distanceInMeters: Int,
 
-    @ColumnInfo(name = RunTable.Column.TIME_IN_MILLIS)
-    val timeInMillis: Long,
+    @ColumnInfo(name = RunTable.Column.RUN_TIME_IN_MILLIS)
+    val runTimeInMillis: Long,
 
     @ColumnInfo(name = RunTable.Column.CALORIES_BURNED)
     val caloriesBurned: Int
@@ -40,7 +40,7 @@ data class RunEntity(
         if (timestamp != other.timestamp) return false
         if (avgSpeedInKMH != other.avgSpeedInKMH) return false
         if (distanceInMeters != other.distanceInMeters) return false
-        if (timeInMillis != other.timeInMillis) return false
+        if (runTimeInMillis != other.runTimeInMillis) return false
 
         return caloriesBurned == other.caloriesBurned
     }
@@ -51,7 +51,7 @@ data class RunEntity(
         result = 31 * result + timestamp.hashCode()
         result = 31 * result + avgSpeedInKMH.hashCode()
         result = 31 * result + distanceInMeters
-        result = 31 * result + timeInMillis.hashCode()
+        result = 31 * result + runTimeInMillis.hashCode()
         result = 31 * result + caloriesBurned
 
         return result
@@ -67,7 +67,7 @@ object RunTable {
         const val TIMESTAMP          = "timestamp"
         const val AVG_SPEED_IN_KMH   = "avg_speed_in_kmh"
         const val DISTANCE_IN_METERS = "distance_in_meters"
-        const val TIME_IN_MILLIS     = "time_in_millis"
+        const val RUN_TIME_IN_MILLIS = "time_in_millis"
         const val CALORIES_BURNED    = "calories_burned"
     }
 }

@@ -1,4 +1,4 @@
-package com.mohanjp.runningtracking
+package com.mohanjp.runningtracker
 
 import org.junit.Test
 

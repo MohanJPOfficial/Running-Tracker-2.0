@@ -1,8 +1,8 @@
-package com.mohanjp.runningtracking
+package com.mohanjp.runningtracker
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.mohanjp.runningtracking.databinding.ActivityCoreBinding
+import com.mohanjp.runningtracker.databinding.ActivityCoreBinding
 
 class CoreActivity : AppCompatActivity() {
 

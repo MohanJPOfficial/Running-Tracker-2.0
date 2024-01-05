@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.mohanjp.runningtracking"
+    namespace = "com.mohanjp.runningtracker"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.mohanjp.runningtracking"
+        applicationId = "com.mohanjp.runningtracker"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
