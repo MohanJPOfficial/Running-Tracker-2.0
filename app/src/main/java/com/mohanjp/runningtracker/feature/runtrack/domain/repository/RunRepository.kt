@@ -1,6 +1,6 @@
-package com.mohanjp.runningtracker.feature.home.domain.repository
+package com.mohanjp.runningtracker.feature.runtrack.domain.repository
 
-import com.mohanjp.runningtracker.feature.home.domain.model.Run
+import com.mohanjp.runningtracker.feature.runtrack.domain.model.Run
 import kotlinx.coroutines.flow.Flow
 
 interface RunRepository {

@@ -1,11 +1,11 @@
-package com.mohanjp.runningtracker.feature.home.data.source.local.dao
+package com.mohanjp.runningtracker.feature.runtrack.data.source.local.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
-import com.mohanjp.runningtracker.feature.home.data.source.local.entity.RunEntity
-import com.mohanjp.runningtracker.feature.home.data.source.local.entity.RunTable
+import com.mohanjp.runningtracker.feature.runtrack.data.source.local.entity.RunEntity
+import com.mohanjp.runningtracker.feature.runtrack.data.source.local.entity.RunTable
 import kotlinx.coroutines.flow.Flow
 
 @Dao

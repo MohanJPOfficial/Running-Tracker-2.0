@@ -1,19 +1,39 @@
-package com.mohanjp.runningtracker.feature.home.domain.model
+package com.mohanjp.runningtracker.feature.runtrack.data.source.local.entity
 
-data class Run(
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity
+data class RunEntity(
+
+    @PrimaryKey(autoGenerate = false)
+    @ColumnInfo(name = RunTable.Column.ID)
     val id: String,
+
+    @ColumnInfo(name = RunTable.Column.IMAGE_BYTE_ARRAY)
     val imageByteArray: ByteArray,
+
+    @ColumnInfo(name = RunTable.Column.TIMESTAMP)
     val timestamp: Long,
+
+    @ColumnInfo(name = RunTable.Column.AVG_SPEED_IN_KMH)
     val avgSpeedInKMH: Float,
+
+    @ColumnInfo(name = RunTable.Column.DISTANCE_IN_METERS)
     val distanceInMeters: Int,
+
+    @ColumnInfo(name = RunTable.Column.RUN_TIME_IN_MILLIS)
     val runTimeInMillis: Long,
+
+    @ColumnInfo(name = RunTable.Column.CALORIES_BURNED)
     val caloriesBurned: Int
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as Run
+        other as RunEntity
 
         if (id != other.id) return false
         if (!imageByteArray.contentEquals(other.imageByteArray)) return false
@@ -35,5 +55,19 @@ data class Run(
         result = 31 * result + caloriesBurned
 
         return result
+    }
+}
+
+object RunTable {
+    const val TABLE_NAME = "run_table"
+
+    object Column {
+        const val ID                 = "id"
+        const val IMAGE_BYTE_ARRAY   = "image"
+        const val TIMESTAMP          = "timestamp"
+        const val AVG_SPEED_IN_KMH   = "avg_speed_in_kmh"
+        const val DISTANCE_IN_METERS = "distance_in_meters"
+        const val RUN_TIME_IN_MILLIS = "time_in_millis"
+        const val CALORIES_BURNED    = "calories_burned"
     }
 }

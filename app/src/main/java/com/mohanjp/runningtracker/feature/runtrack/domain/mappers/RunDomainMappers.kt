@@ -1,7 +1,7 @@
-package com.mohanjp.runningtracker.feature.home.domain.mappers
+package com.mohanjp.runningtracker.feature.runtrack.domain.mappers
 
-import com.mohanjp.runningtracker.feature.home.data.source.local.entity.RunEntity
-import com.mohanjp.runningtracker.feature.home.domain.model.Run
+import com.mohanjp.runningtracker.feature.runtrack.data.source.local.entity.RunEntity
+import com.mohanjp.runningtracker.feature.runtrack.domain.model.Run
 
 fun Run.toEntity() = RunEntity(
     id = id,

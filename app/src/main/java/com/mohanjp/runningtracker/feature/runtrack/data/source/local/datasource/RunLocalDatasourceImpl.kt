@@ -1,7 +1,7 @@
-package com.mohanjp.runningtracker.feature.home.data.source.local.datasource
+package com.mohanjp.runningtracker.feature.runtrack.data.source.local.datasource
 
 import com.mohanjp.runningtracker.core.data.source.local.AppDB
-import com.mohanjp.runningtracker.feature.home.data.source.local.entity.RunEntity
+import com.mohanjp.runningtracker.feature.runtrack.data.source.local.entity.RunEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

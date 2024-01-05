@@ -2,8 +2,8 @@ package com.mohanjp.runningtracker.core.data.source.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.mohanjp.runningtracker.feature.home.data.source.local.dao.RunDao
-import com.mohanjp.runningtracker.feature.home.data.source.local.entity.RunEntity
+import com.mohanjp.runningtracker.feature.runtrack.data.source.local.dao.RunDao
+import com.mohanjp.runningtracker.feature.runtrack.data.source.local.entity.RunEntity
 
 @Database(
     entities = [RunEntity::class],
