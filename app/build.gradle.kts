@@ -1,9 +1,12 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+
 plugins {
     id("com.android.application")
     kotlin("android")
     kotlin("kapt")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
@@ -18,6 +21,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val googleMapApiKey = gradleLocalProperties(rootDir).getProperty("GOOGLE_MAP_API_KEY")
+        manifestPlaceholders["GOOGLE_MAP_API_KEY"] = googleMapApiKey
     }
 
     buildTypes {
@@ -67,4 +73,15 @@ dependencies {
     implementation("com.google.dagger:hilt-android:$hiltVersion")
     kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
     kapt("androidx.hilt:hilt-compiler:1.1.0")
+
+    /**
+     * MP chart
+     */
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    /**
+     * google maps and location services
+     */
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 }
