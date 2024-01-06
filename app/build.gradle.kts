@@ -22,8 +22,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val googleMapApiKey = gradleLocalProperties(rootDir).getProperty("GOOGLE_MAP_API_KEY")
-        manifestPlaceholders["GOOGLE_MAP_API_KEY"] = googleMapApiKey
+        /*val googleMapApiKey = gradleLocalProperties(rootDir).getProperty("GOOGLE_MAP_API_KEY")
+        manifestPlaceholders["GOOGLE_MAP_API_KEY"] = googleMapApiKey*/
     }
 
     buildTypes {
@@ -57,6 +57,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
+    /**
+     * intuit
+     */
+    implementation("com.intuit.sdp:sdp-android:1.1.0")
 
     /**
      * navigation

@@ -13,3 +13,12 @@ fun View.makeInvisible() {
 fun View.makeGone() {
     this.visibility = View.GONE
 }
+
+fun View.setOnDebounceClickListener(onClick: (View) -> Unit) {
+    val debounceClickListener = object : DebounceClickListener() {
+        override fun onDebounceClick(view: View) {
+            onClick(view)
+        }
+    }
+    setOnClickListener(debounceClickListener)
+}

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="default_bottom_bar_height">56dp</dimen>
+
+    <dimen name="corner_size_tiny">2dp</dimen>
+    <dimen name="corner_size_small">4dp</dimen>
+    <dimen name="default_corner_size">8dp</dimen>
+    <dimen name="corner_size_medium">12dp</dimen>
+    <dimen name="corner_size_large">16dp</dimen>
+    <dimen name="corner_size_xlarge">20dp</dimen>
+
+    <dimen name="default_icon_size">24dp</dimen>
+    <dimen name="small_icon_size">16dp</dimen>
+
+    <dimen name="text_size_large">21sp</dimen>
+    <dimen name="text_size_very_small">14sp</dimen>
+
+    <dimen name="inset_large_medium">@dimen/_10sdp</dimen>
+    <dimen name="inset_small">@dimen/_6sdp</dimen>
+
+    <dimen name="button_corner_size">48dp</dimen>
+
+    <dimen name="profile_image_size_medium">@dimen/_40sdp</dimen>
+
+</resources>

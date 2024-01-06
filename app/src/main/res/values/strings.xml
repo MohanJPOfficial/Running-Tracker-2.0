@@ -7,5 +7,16 @@
         <item>Average Speed</item>
         <item>Calories Burned</item>
     </string-array>
-    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">ENTER YOUR API KEY HERE</string>
+
+    <string name="content_description_close">Close</string>
+    <string name="notification_rational_text">To receive important notifications, please grant the app permission to access notifications on your Android device.</string>
+    <string name="notification_permanent_text">It seems that you permanently denied notification permission. To enable it, please navigate to your device settings, and grant it notification permission.</string>
+
+    <string name="location_rational_text">To track your run, please grant the app permission to access locations on your Android device.</string>
+    <string name="location_permanent_text">It seems that you permanently denied location permission. To enable it, please navigate to your device settings, and grant it location permission.</string>
+
+    <string name="ok">OK</string>
+
+    <string name="go_to_settings">Go to Settings</string>
+
 </resources>

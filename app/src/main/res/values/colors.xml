@@ -17,4 +17,7 @@
     <color name="md_blue_A700">#2962FF</color>
     <color name="colorAccent">#FFE600</color>
     <color name="errorColor">#D50000</color>
+
+    <color name="yellow_cream_brulee">#FFEDA0</color>
+    <color name="green_dark_green">#032030</color>
 </resources>
