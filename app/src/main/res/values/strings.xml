@@ -19,4 +19,9 @@
 
     <string name="go_to_settings">Go to Settings</string>
 
+    <!-- Ui Text -->
+    <string name="unknown_error">Unknown Error</string>
+    <string name="something_went_wrong_try_later">Something went wrong! try again later.</string>
+    <string name="check_your_internet">Please check your internet connection!</string>
+
 </resources>
