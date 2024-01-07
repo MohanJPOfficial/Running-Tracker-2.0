@@ -15,6 +15,7 @@ import com.mohanjp.runningtracker.common.utils.permission.helper.PermissionResul
 import com.mohanjp.runningtracker.common.utils.permission.notification.NotificationPermission
 import com.mohanjp.runningtracker.common.utils.presentation.setOnDebounceClickListener
 import com.mohanjp.runningtracker.databinding.FragmentSetupBinding
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
