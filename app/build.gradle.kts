@@ -101,4 +101,9 @@ dependencies {
      * timber
      */
     implementation("com.jakewharton.timber:timber:5.0.1")
+
+    /**
+     * lifecycle - service
+     */
+    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
 }
