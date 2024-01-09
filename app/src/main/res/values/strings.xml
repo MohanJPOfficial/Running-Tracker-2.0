@@ -24,4 +24,14 @@
     <string name="something_went_wrong_try_later">Something went wrong! try again later.</string>
     <string name="check_your_internet">Please check your internet connection!</string>
 
+    <!-- Notification based -->
+    <string name="running_tracker_notification_channel_id">running_tracker_notification</string>
+    <string name="title_running_tracker_notification">Running Tracker Notification</string>
+    <string name="desc_running_tracker_notification">Running Tracker…</string>
+    <string name="running_tracker_notification_content_title">"Track your run"</string>
+
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="pause">Pause</string>
+
 </resources>

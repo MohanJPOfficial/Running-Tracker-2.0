@@ -6,10 +6,10 @@ import android.os.Build
  * Android 10
  */
 fun isAndroid29OrAbove() =
-    Build.VERSION_CODES.Q >= Build.VERSION.SDK_INT
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
 /**
  * Android 13
  */
 fun isAndroid33OrAbove() =
-    Build.VERSION_CODES.TIRAMISU >= Build.VERSION.SDK_INT
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
