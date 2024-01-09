@@ -1,5 +1,6 @@
 [versions]
 
+#libraries
 core-ktx = "1.12.0"
 appcompat = "1.6.1"
 material = "1.11.0"
@@ -17,9 +18,16 @@ play-services-maps = "18.2.0"
 timber = "5.0.1"
 lifecycle-service = "2.6.2"
 
+#plugins - top level
+android-gradle = "8.2.0"
+kotlin = "1.9.10"
+ksp = "1.9.0-1.0.13"
+mapsplatform-gradle = "2.0.0"
+
 
 [libraries]
 
+#core
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat"}
 material = { module = "com.google.android.material:material", version.ref = "material" }
@@ -57,4 +65,36 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 #lifecycle - service
 androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle-service" }
 
+
+[bundles]
+
+#room
+androidx-room-bundle = [
+    "androidx-room-runtime",
+    "androidx-room-ktx"
+]
+
+#navigation
+androidx-navigation-bundle = [
+    "androidx-navigation-ui-ktx",
+    "androidx-navigation-fragment-ktx"
+]
+
+
 [plugins]
+
+#core
+android-application = { id = "com.android.application", version.ref = "android-gradle" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
+#ksp
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
+#kapt
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+
+#dagger - hilt
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt-android" }
+
+#map - gradle
+mapsplatform-gradle = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "mapsplatform-gradle" }
