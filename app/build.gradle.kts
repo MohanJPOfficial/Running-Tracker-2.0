@@ -1,20 +1,21 @@
 plugins {
-    id("com.android.application")
-    kotlin("android")
-    kotlin("kapt")
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
-    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+//    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.mapsplatform.gradle)
 }
 
 android {
     namespace = "com.mohanjp.runningtracker"
-    compileSdk = 34
+
+    compileSdk = libs.versions.compilesdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.mohanjp.runningtracker"
-        minSdk = 26
-        targetSdk = 34
+        minSdk = libs.versions.minsdk.get().toInt()
+        targetSdk = libs.versions.targetsdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -48,60 +49,55 @@ android {
 
 dependencies {
 
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.constraintlayout)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 
     /**
      * intuit
      */
-    implementation("com.intuit.sdp:sdp-android:1.1.0")
+    implementation(libs.sdp.android)
 
     /**
      * navigation
      */
-    val navVersion = "2.7.6"
-    implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
-    implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
+    implementation(libs.bundles.androidx.navigation.bundle)
 
     /**
      * room
      */
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    ksp("androidx.room:room-compiler:$roomVersion")
+    implementation(libs.bundles.androidx.room.bundle)
+    ksp(libs.androidx.room.compiler)
 
     /**
      * dagger - hilt
      */
-    val hiltVersion = "2.47"
-    implementation("com.google.dagger:hilt-android:$hiltVersion")
-    kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
-    kapt("androidx.hilt:hilt-compiler:1.1.0")
-
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+    //ksp("androidx.hilt:hilt-compiler:1.1.0")
+    
     /**
      * MP chart
      */
-    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation(libs.mp.android.chart)
 
     /**
      * google maps and location services
      */
-    implementation("com.google.android.gms:play-services-location:21.0.1")
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-
+    implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
+    
     /**
      * timber
      */
-    implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation(libs.timber)
 
     /**
      * lifecycle - service
      */
-    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
+    implementation(libs.androidx.lifecycle.service)
 }
