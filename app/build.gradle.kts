@@ -4,20 +4,24 @@ plugins {
     kotlin("kapt")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
-    namespace = "com.mohanjp.runningtracking"
+    namespace = "com.mohanjp.runningtracker"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.mohanjp.runningtracking"
+        applicationId = "com.mohanjp.runningtracker"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        /*val googleMapApiKey = gradleLocalProperties(rootDir).getProperty("GOOGLE_MAP_API_KEY")
+        manifestPlaceholders["GOOGLE_MAP_API_KEY"] = googleMapApiKey*/
     }
 
     buildTypes {
@@ -53,6 +57,18 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     /**
+     * intuit
+     */
+    implementation("com.intuit.sdp:sdp-android:1.1.0")
+
+    /**
+     * navigation
+     */
+    val navVersion = "2.7.6"
+    implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
+    implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
+
+    /**
      * room
      */
     val roomVersion = "2.6.1"
@@ -67,4 +83,25 @@ dependencies {
     implementation("com.google.dagger:hilt-android:$hiltVersion")
     kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
     kapt("androidx.hilt:hilt-compiler:1.1.0")
+
+    /**
+     * MP chart
+     */
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    /**
+     * google maps and location services
+     */
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+
+    /**
+     * timber
+     */
+    implementation("com.jakewharton.timber:timber:5.0.1")
+
+    /**
+     * lifecycle - service
+     */
+    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
 }

@@ -1,3 +1,37 @@
 <resources>
     <string name="app_name">Running Tracking2o</string>
+    <string-array name="filter_options">
+        <item>Date</item>
+        <item>Running Time</item>
+        <item>Distance</item>
+        <item>Average Speed</item>
+        <item>Calories Burned</item>
+    </string-array>
+
+    <string name="content_description_close">Close</string>
+    <string name="notification_rational_text">To receive important notifications, please grant the app permission to access notifications on your Android device.</string>
+    <string name="notification_permanent_text">It seems that you permanently denied notification permission. To enable it, please navigate to your device settings, and grant it notification permission.</string>
+
+    <string name="location_rational_text">To track your run, please grant the app permission to access locations on your Android device.</string>
+    <string name="location_permanent_text">It seems that you permanently denied location permission. To enable it, please navigate to your device settings, and grant it location permission.</string>
+
+    <string name="ok">OK</string>
+
+    <string name="go_to_settings">Go to Settings</string>
+
+    <!-- Ui Text -->
+    <string name="unknown_error">Unknown Error</string>
+    <string name="something_went_wrong_try_later">Something went wrong! try again later.</string>
+    <string name="check_your_internet">Please check your internet connection!</string>
+
+    <!-- Notification based -->
+    <string name="running_tracker_notification_channel_id">running_tracker_notification</string>
+    <string name="title_running_tracker_notification">Running Tracker Notification</string>
+    <string name="desc_running_tracker_notification">Running Tracker…</string>
+    <string name="running_tracker_notification_content_title">"Track your run"</string>
+
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="pause">Pause</string>
+
 </resources>
