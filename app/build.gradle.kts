@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+//    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.mapsplatform.gradle)
@@ -9,12 +9,12 @@ plugins {
 
 android {
     namespace = "com.mohanjp.runningtracker"
-    compileSdk = 34
+    compileSdk = libs.versions.compilesdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.mohanjp.runningtracker"
-        minSdk = 26
-        targetSdk = 34
+        minSdk = libs.versions.minsdk.get().toInt()
+        targetSdk = libs.versions.targetsdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
