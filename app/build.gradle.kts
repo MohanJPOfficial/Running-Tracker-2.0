@@ -9,6 +9,7 @@ plugins {
 
 android {
     namespace = "com.mohanjp.runningtracker"
+
     compileSdk = libs.versions.compilesdk.get().toInt()
 
     defaultConfig {
@@ -78,7 +79,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
     //ksp("androidx.hilt:hilt-compiler:1.1.0")
-
+    
     /**
      * MP chart
      */
@@ -89,7 +90,7 @@ dependencies {
      */
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
-
+    
     /**
      * timber
      */
