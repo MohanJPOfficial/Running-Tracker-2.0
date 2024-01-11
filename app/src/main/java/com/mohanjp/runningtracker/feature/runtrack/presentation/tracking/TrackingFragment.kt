@@ -1,20 +1,30 @@
 package com.mohanjp.runningtracker.feature.runtrack.presentation.tracking
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.PolylineOptions
 import com.mohanjp.runningtracker.R
+import com.mohanjp.runningtracker.common.utils.presentation.makeGone
+import com.mohanjp.runningtracker.common.utils.presentation.makeVisible
 import com.mohanjp.runningtracker.common.utils.presentation.setOnDebounceClickListener
 import com.mohanjp.runningtracker.databinding.FragmentTrackingBinding
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
@@ -23,19 +33,28 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     private var map: GoogleMap? = null
 
+    private var isTracking = false
+    private var pathPoints = mutableListOf<Polyline>()
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         binding = FragmentTrackingBinding.bind(view)
         binding.mapView.onCreate(savedInstanceState)
 
-        binding.mapView.getMapAsync { map = it }
+        binding.mapView.getMapAsync {
+            map = it
+
+            addAllPolyline()
+        }
 
         binding.bindState(
             uiAction = viewModel.accept,
             uiState  = viewModel.uiState,
             uiEvent  = viewModel.uiEvent
         )
+
+        subscribeToObservers()
     }
 
     private fun FragmentTrackingBinding.bindState(
@@ -46,9 +65,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         uiEvent.onEach { event ->
             when(event) {
                 TrackingUiEvent.StartOrResumeService -> {
-                    sendCommandToService(
+                    /*sendCommandToService(
                         action = TrackingServiceState.ACTION_START_OR_RESUME_SERVICE
-                    )
+                    )*/
+
+                    toggleRun()
                 }
             }
         }.flowWithLifecycle(viewLifecycleOwner.lifecycle)
@@ -64,6 +85,88 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
         btnFinishRun.setOnDebounceClickListener {
             uiAction(TrackingUiAction.ButtonFinishRunClicked)
+        }
+    }
+
+    private fun subscribeToObservers() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                launch {
+                    TrackingService.isTracking.collectLatest {
+                        Timber.d("is Tracking >> $it")
+                        updateTracking(it)
+                    }
+                }
+
+                launch {
+                    TrackingService.pathPoints.collectLatest {
+                        Timber.d("path points >> $it")
+                        pathPoints = it
+                        addLatestPolyline()
+                        moveCameraToUser()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun toggleRun() {
+        if(isTracking) {
+            sendCommandToService(TrackingServiceState.ACTION_PAUSE_SERVICE)
+        } else {
+            sendCommandToService(TrackingServiceState.ACTION_START_OR_RESUME_SERVICE)
+        }
+    }
+
+    private fun updateTracking(isTracking: Boolean) {
+        this.isTracking = isTracking
+
+        if(!isTracking) {
+            binding.apply {
+                btnToggleRun.text = "Start"
+                btnFinishRun.makeVisible()
+            }
+        } else {
+            binding.apply {
+                btnToggleRun.text = "Stop"
+                btnFinishRun.makeGone()
+            }
+        }
+    }
+
+    private fun moveCameraToUser() {
+        if(pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
+            map?.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(
+                    pathPoints.last().last(),
+                    15f
+                )
+            )
+        }
+    }
+
+    private fun addAllPolyline() {
+        pathPoints.forEach { polyline ->
+            val polylineOptions = PolylineOptions()
+                .color(Color.RED)
+                .width(8f)
+                .addAll(polyline)
+
+            map?.addPolyline(polylineOptions)
+        }
+    }
+
+    private fun addLatestPolyline() {
+        if(pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
+            val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2]
+            val lastLatLng = pathPoints.last().last()
+            val polylineOptions = PolylineOptions()
+                .color(Color.RED)
+                .width(8f)
+                .add(preLastLatLng)
+                .add(lastLatLng)
+            map?.addPolyline(polylineOptions)
         }
     }
 
