@@ -11,6 +11,7 @@ import com.mohanjp.runningtracker.common.utils.notifcation.service.RunningTracke
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -26,9 +27,11 @@ class TrackingService : LifecycleService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    private val pathPoints = mutableListOf<Polyline>()
+
     companion object {
         val isTracking = MutableStateFlow(false)
-        val pathPoints = MutableStateFlow<Polylines>(mutableListOf(mutableListOf()))
+        val pathPointsFlow = MutableSharedFlow<Polylines>()
 
         val dummy = MutableStateFlow(listOf<LatLng>())
     }
@@ -54,7 +57,7 @@ class TrackingService : LifecycleService() {
             }.launchIn(serviceScope)
 
         serviceScope.launch {
-            pathPoints.collect {
+            pathPointsFlow.collect {
                 Timber.d("polylines >> $it")
             }
         }
@@ -88,7 +91,10 @@ class TrackingService : LifecycleService() {
 
     private fun startForegroundService() {
 
-        addEmptyPolyline()
+        serviceScope.launch {
+            addEmptyPolyline()
+        }
+
         isTracking.update { true }
 
         locationTracker.startLocationTracking()
@@ -104,16 +110,14 @@ class TrackingService : LifecycleService() {
         locationTracker.stopLocationTracking()
     }
 
-    private fun addEmptyPolyline() {
+    private suspend fun addEmptyPolyline() {
 
-        pathPoints.update {
-            it.also { list ->
-                list.add(mutableListOf())
-            }
-        }
+        pathPoints.add(mutableListOf())
+
+        pathPointsFlow.emit(pathPoints)
     }
 
-    private fun addPathPoint(location: Location) {
+    private suspend fun addPathPoint(location: Location) {
 
         val latLng = LatLng(location.latitude, location.longitude)
 
@@ -125,15 +129,11 @@ class TrackingService : LifecycleService() {
 
         Timber.d("Location update => lat = ${location.latitude}, lng = ${location.longitude}")
 
-        Timber.d("current list = ${pathPoints.value}")
+        Timber.d("current list = ${pathPoints}")
 
-        pathPoints.update {
-            pathPoints.value.apply {
-                last().also {
-                    it.add(latLng)
-                }
-            }
-        }
+        pathPoints.last().add(latLng)
+
+        pathPointsFlow.emit(pathPoints)
     }
 }
 

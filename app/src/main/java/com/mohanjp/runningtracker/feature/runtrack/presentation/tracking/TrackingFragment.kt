@@ -100,7 +100,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                 }
 
                 launch {
-                    TrackingService.pathPoints.collectLatest {
+                    TrackingService.pathPointsFlow.collectLatest {
                         Timber.d("path points >> $it")
                         pathPoints = it
                         addLatestPolyline()
