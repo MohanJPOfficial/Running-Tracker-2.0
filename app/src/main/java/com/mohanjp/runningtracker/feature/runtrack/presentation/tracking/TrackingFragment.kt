@@ -1,15 +1,17 @@
 package com.mohanjp.runningtracker.feature.runtrack.presentation.tracking
 
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Color
 import android.os.Bundle
+import android.os.IBinder
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.PolylineOptions
@@ -20,10 +22,8 @@ import com.mohanjp.runningtracker.common.utils.presentation.setOnDebounceClickLi
 import com.mohanjp.runningtracker.databinding.FragmentTrackingBinding
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
@@ -31,10 +31,35 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     private lateinit var binding: FragmentTrackingBinding
     private val viewModel: TrackingViewModel by viewModels()
 
+    private lateinit var trackingService: TrackingService
+
     private var map: GoogleMap? = null
 
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
+
+    private val serviceConnection = object: ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as TrackingService.TrackingServiceBinder
+            trackingService = binder.getBoundService()
+
+            trackingService.isTracking.onEach { isTracking ->
+                Timber.d("is Tracking >> $isTracking")
+                updateTracking(isTracking)
+            }.launchIn(viewLifecycleOwner.lifecycleScope)
+
+            trackingService.pathPointsFlow.onEach { polyLines ->
+                Timber.d("path points >> $polyLines")
+                pathPoints = polyLines
+                addLatestPolyline()
+                moveCameraToUser()
+            }.launchIn(viewLifecycleOwner.lifecycleScope)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Timber.d("Service is disconnected")
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -53,8 +78,6 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             uiState  = viewModel.uiState,
             uiEvent  = viewModel.uiEvent
         )
-
-        subscribeToObservers()
     }
 
     private fun FragmentTrackingBinding.bindState(
@@ -65,9 +88,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         uiEvent.onEach { event ->
             when(event) {
                 TrackingUiEvent.StartOrResumeService -> {
-                    /*sendCommandToService(
+                    sendCommandToService(
                         action = TrackingServiceState.ACTION_START_OR_RESUME_SERVICE
-                    )*/
+                    )
 
                     toggleRun()
                 }
@@ -85,29 +108,6 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
         btnFinishRun.setOnDebounceClickListener {
             uiAction(TrackingUiAction.ButtonFinishRunClicked)
-        }
-    }
-
-    private fun subscribeToObservers() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-
-                launch {
-                    TrackingService.isTracking.collectLatest {
-                        Timber.d("is Tracking >> $it")
-                        updateTracking(it)
-                    }
-                }
-
-                launch {
-                    TrackingService.pathPointsFlow.collectLatest {
-                        Timber.d("path points >> $it")
-                        pathPoints = it
-                        addLatestPolyline()
-                        moveCameraToUser()
-                    }
-                }
-            }
         }
     }
 
@@ -179,6 +179,10 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     override fun onStart() {
         super.onStart()
+        Intent(requireContext(), TrackingService::class.java).also {
+            requireContext().bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
+
         binding.mapView.onStart()
     }
 
@@ -194,6 +198,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     override fun onStop() {
         super.onStop()
+        requireContext().unbindService(serviceConnection)
         binding.mapView.onStop()
     }
 
