@@ -10,6 +10,9 @@ import com.mohanjp.runningtracker.common.utils.location.LocationTracker
 import com.mohanjp.runningtracker.common.utils.location.RunningLocationTracker
 import com.mohanjp.runningtracker.common.utils.notifcation.service.NotificationService
 import com.mohanjp.runningtracker.common.utils.notifcation.service.RunningTrackerNotificationService
+import com.mohanjp.runningtracker.core.utils.stopwatch.RunningTrackerStopWatch
+import com.mohanjp.runningtracker.core.utils.stopwatch.StopWatch
+import com.mohanjp.runningtracker.core.utils.stopwatch.StopwatchFormat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,6 +38,7 @@ class TrackingService : Service() {
 
     val isTracking = MutableStateFlow(false)
     val pathPointsFlow = MutableSharedFlow<Polylines>()
+    val stopWatchTimer = MutableStateFlow(StopwatchFormat())
 
     private val trackerNotification: NotificationService by lazy {
         RunningTrackerNotificationService(this)
@@ -44,6 +48,10 @@ class TrackingService : Service() {
         RunningLocationTracker(this)
     }
 
+    private val stopwatch: StopWatch by lazy {
+        RunningTrackerStopWatch(scope = serviceScope)
+    }
+
     var isFirstRun = true
 
     override fun onCreate() {
@@ -51,9 +59,7 @@ class TrackingService : Service() {
 
         locationTracker.locationUpdatesFlow
             .onEach { location ->
-
                 addPathPoint(location)
-
             }.launchIn(serviceScope)
     }
 
@@ -65,21 +71,21 @@ class TrackingService : Service() {
 
         intent?.let {
             when (intent.action) {
-                TrackingServiceState.ACTION_START_OR_RESUME_SERVICE.name -> {
+                TrackingServiceActionEnum.ACTION_START_OR_RESUME_SERVICE.name -> {
                     Timber.d("service was started/resumed")
 
                     if(isFirstRun) {
                         isFirstRun = false
                         startForegroundService()
                     } else {
-                        startForegroundService()
+                        startTimer()
                     }
                 }
-                TrackingServiceState.ACTION_PAUSE_SERVICE.name -> {
+                TrackingServiceActionEnum.ACTION_PAUSE_SERVICE.name -> {
                     pauseLocationTracking()
                     Timber.d("service was paused")
                 }
-                TrackingServiceState.ACTION_STOP_SERVICE.name -> {
+                TrackingServiceActionEnum.ACTION_STOP_SERVICE.name -> {
                     Timber.d("service was stopped")
                 }
             }
@@ -87,7 +93,7 @@ class TrackingService : Service() {
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun startForegroundService() {
+    private fun startTimer() {
 
         serviceScope.launch {
             addEmptyPolyline()
@@ -95,7 +101,19 @@ class TrackingService : Service() {
 
         isTracking.update { true }
 
+        stopwatch.start()
+
         locationTracker.startLocationTracking()
+
+        stopwatch.formattedTime.onEach { stopwatchFormat ->
+            stopWatchTimer.update { stopwatchFormat }
+            trackerNotification.postNotification(contentText = stopwatchFormat.withoutMillis)
+        }.launchIn(serviceScope)
+    }
+
+    private fun startForegroundService() {
+
+        startTimer()
 
         startForeground(
             trackerNotification.notificationId,
@@ -106,6 +124,7 @@ class TrackingService : Service() {
     private fun pauseLocationTracking() {
         isTracking.update { false }
         locationTracker.stopLocationTracking()
+        stopwatch.pause()
     }
 
     private suspend fun addEmptyPolyline() {
@@ -121,7 +140,7 @@ class TrackingService : Service() {
 
         Timber.d("Location update => lat = ${location.latitude}, lng = ${location.longitude}")
 
-        Timber.d("current list = ${pathPoints}")
+        Timber.d("current list = $pathPoints")
 
         pathPoints.last().add(latLng)
 
@@ -131,10 +150,4 @@ class TrackingService : Service() {
     inner class TrackingServiceBinder : Binder() {
         fun getBoundService(): TrackingService = this@TrackingService
     }
-}
-
-enum class TrackingServiceState {
-    ACTION_START_OR_RESUME_SERVICE,
-    ACTION_PAUSE_SERVICE,
-    ACTION_STOP_SERVICE
 }

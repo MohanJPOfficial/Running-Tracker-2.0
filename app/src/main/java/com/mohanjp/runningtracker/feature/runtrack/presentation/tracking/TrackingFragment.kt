@@ -19,6 +19,7 @@ import com.mohanjp.runningtracker.R
 import com.mohanjp.runningtracker.common.utils.presentation.makeGone
 import com.mohanjp.runningtracker.common.utils.presentation.makeVisible
 import com.mohanjp.runningtracker.common.utils.presentation.setOnDebounceClickListener
+import com.mohanjp.runningtracker.core.utils.stopwatch.StopwatchFormat
 import com.mohanjp.runningtracker.databinding.FragmentTrackingBinding
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,8 +32,6 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     private lateinit var binding: FragmentTrackingBinding
     private val viewModel: TrackingViewModel by viewModels()
 
-    private lateinit var trackingService: TrackingService
-
     private var map: GoogleMap? = null
 
     private var isTracking = false
@@ -41,7 +40,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     private val serviceConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as TrackingService.TrackingServiceBinder
-            trackingService = binder.getBoundService()
+            val trackingService = binder.getBoundService()
 
             trackingService.isTracking.onEach { isTracking ->
                 Timber.d("is Tracking >> $isTracking")
@@ -53,6 +52,10 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                 pathPoints = polyLines
                 addLatestPolyline()
                 moveCameraToUser()
+            }.launchIn(viewLifecycleOwner.lifecycleScope)
+
+            trackingService.stopWatchTimer.onEach { stopwatchTimer ->
+                updateTimer(stopwatchTimer)
             }.launchIn(viewLifecycleOwner.lifecycleScope)
         }
 
@@ -89,7 +92,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             when(event) {
                 TrackingUiEvent.StartOrResumeService -> {
                     sendCommandToService(
-                        action = TrackingServiceState.ACTION_START_OR_RESUME_SERVICE
+                        action = TrackingServiceActionEnum.ACTION_START_OR_RESUME_SERVICE
                     )
 
                     toggleRun()
@@ -113,9 +116,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     private fun toggleRun() {
         if(isTracking) {
-            sendCommandToService(TrackingServiceState.ACTION_PAUSE_SERVICE)
+            sendCommandToService(TrackingServiceActionEnum.ACTION_PAUSE_SERVICE)
         } else {
-            sendCommandToService(TrackingServiceState.ACTION_START_OR_RESUME_SERVICE)
+            sendCommandToService(TrackingServiceActionEnum.ACTION_START_OR_RESUME_SERVICE)
         }
     }
 
@@ -124,12 +127,12 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
         if(!isTracking) {
             binding.apply {
-                btnToggleRun.text = "Start"
+                btnToggleRun.text = requireContext().getString(R.string.start)
                 btnFinishRun.makeVisible()
             }
         } else {
             binding.apply {
-                btnToggleRun.text = "Stop"
+                btnToggleRun.text = requireContext().getString(R.string.stop)
                 btnFinishRun.makeGone()
             }
         }
@@ -170,7 +173,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
-    private fun sendCommandToService(action: TrackingServiceState) {
+    private fun updateTimer(stopwatchTimer: StopwatchFormat) {
+        binding.tvTimer.text = stopwatchTimer.withMillis
+    }
+
+    private fun sendCommandToService(action: TrackingServiceActionEnum) {
         Intent(requireContext(), TrackingService::class.java).also {
             it.action = action.name
             requireContext().startService(it)
