@@ -48,7 +48,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         binding.mapView.getMapAsync { googleMap ->
             map = googleMap
 
-            val pathPointsFlow = viewModel.uiState.map { it.pathPoints }.distinctUntilChanged()
+            val pathPointsFlow = viewModel.uiState.mapNotNull { it.pathPoints }.distinctUntilChanged()
 
             viewLifecycleOwner.lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -56,13 +56,13 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                     pathPointsFlow.first().also { addAllPolyline(it) }
                 }
             }
-        }
 
-        binding.bindState(
-            uiAction = viewModel.accept,
-            uiState  = viewModel.uiState,
-            uiEvent  = viewModel.uiEvent
-        )
+            binding.bindState(
+                uiAction = viewModel.accept,
+                uiState  = viewModel.uiState,
+                uiEvent  = viewModel.uiEvent
+            )
+        }
     }
 
     private fun FragmentTrackingBinding.bindState(

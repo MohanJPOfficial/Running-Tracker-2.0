@@ -182,7 +182,7 @@ data class TrackingUiState(
     val cameraPosition: LatLng? = null,
     val preLastAndLastLatLng: PreLastAndLastLatLng? = null,
     val stopwatchTimer: String = "00:00:00:00",
-    val pathPoints: Polylines = mutableListOf(mutableListOf())
+    val pathPoints: Polylines? = null
 )
 
 data class PreLastAndLastLatLng(
