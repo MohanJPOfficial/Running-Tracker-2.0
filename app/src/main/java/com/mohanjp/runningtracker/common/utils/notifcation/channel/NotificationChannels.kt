@@ -17,7 +17,7 @@ enum class NotificationChannels(
         channelId = R.string.running_tracker_notification_channel_id,
         channelName = R.string.title_running_tracker_notification,
         channelDescription = R.string.desc_running_tracker_notification,
-        channelImportance = NotificationManager.IMPORTANCE_DEFAULT,
+        channelImportance = NotificationManager.IMPORTANCE_LOW,
         notificationId = 100
     );
 

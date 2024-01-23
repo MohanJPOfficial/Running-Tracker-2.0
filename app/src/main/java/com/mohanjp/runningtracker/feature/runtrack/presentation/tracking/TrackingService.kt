@@ -10,9 +10,13 @@ import com.mohanjp.runningtracker.common.utils.location.LocationTracker
 import com.mohanjp.runningtracker.common.utils.location.RunningLocationTracker
 import com.mohanjp.runningtracker.common.utils.notifcation.service.NotificationService
 import com.mohanjp.runningtracker.common.utils.notifcation.service.RunningTrackerNotificationService
+import com.mohanjp.runningtracker.core.utils.stopwatch.RunningTrackerStopWatch
+import com.mohanjp.runningtracker.core.utils.stopwatch.StopWatch
+import com.mohanjp.runningtracker.core.utils.stopwatch.StopwatchFormat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -36,6 +40,10 @@ class TrackingService : Service() {
     val isTracking = MutableStateFlow(false)
     val pathPointsFlow = MutableSharedFlow<Polylines>()
 
+    val stateFlow = MutableStateFlow(mutableListOf<Polyline>())
+
+    val stopWatchTimer = MutableStateFlow(StopwatchFormat())
+
     private val trackerNotification: NotificationService by lazy {
         RunningTrackerNotificationService(this)
     }
@@ -44,16 +52,18 @@ class TrackingService : Service() {
         RunningLocationTracker(this)
     }
 
-    var isFirstRun = true
+    private val stopwatch: StopWatch by lazy {
+        RunningTrackerStopWatch(scope = serviceScope)
+    }
+
+    private var isFirstRun = true
 
     override fun onCreate() {
         super.onCreate()
 
         locationTracker.locationUpdatesFlow
             .onEach { location ->
-
                 addPathPoint(location)
-
             }.launchIn(serviceScope)
     }
 
@@ -65,21 +75,21 @@ class TrackingService : Service() {
 
         intent?.let {
             when (intent.action) {
-                TrackingServiceState.ACTION_START_OR_RESUME_SERVICE.name -> {
+                TrackingServiceActionEnum.ACTION_START_OR_RESUME_SERVICE.name -> {
                     Timber.d("service was started/resumed")
 
                     if(isFirstRun) {
                         isFirstRun = false
                         startForegroundService()
                     } else {
-                        startForegroundService()
+                        startTimer()
                     }
                 }
-                TrackingServiceState.ACTION_PAUSE_SERVICE.name -> {
+                TrackingServiceActionEnum.ACTION_PAUSE_SERVICE.name -> {
                     pauseLocationTracking()
                     Timber.d("service was paused")
                 }
-                TrackingServiceState.ACTION_STOP_SERVICE.name -> {
+                TrackingServiceActionEnum.ACTION_STOP_SERVICE.name -> {
                     Timber.d("service was stopped")
                 }
             }
@@ -87,7 +97,7 @@ class TrackingService : Service() {
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun startForegroundService() {
+    private fun startTimer() {
 
         serviceScope.launch {
             addEmptyPolyline()
@@ -95,7 +105,19 @@ class TrackingService : Service() {
 
         isTracking.update { true }
 
+        stopwatch.start()
+
         locationTracker.startLocationTracking()
+
+        stopwatch.formattedTime.onEach { stopwatchFormat ->
+            stopWatchTimer.update { stopwatchFormat }
+            trackerNotification.postNotification(contentText = stopwatchFormat.withoutMillis)
+        }.launchIn(serviceScope)
+    }
+
+    private fun startForegroundService() {
+
+        startTimer()
 
         startForeground(
             trackerNotification.notificationId,
@@ -106,6 +128,7 @@ class TrackingService : Service() {
     private fun pauseLocationTracking() {
         isTracking.update { false }
         locationTracker.stopLocationTracking()
+        stopwatch.pause()
     }
 
     private suspend fun addEmptyPolyline() {
@@ -113,6 +136,7 @@ class TrackingService : Service() {
         pathPoints.add(mutableListOf())
 
         pathPointsFlow.emit(pathPoints)
+        stateFlow.value = pathPoints
     }
 
     private suspend fun addPathPoint(location: Location) {
@@ -121,20 +145,21 @@ class TrackingService : Service() {
 
         Timber.d("Location update => lat = ${location.latitude}, lng = ${location.longitude}")
 
-        Timber.d("current list = ${pathPoints}")
+        Timber.d("current list = $pathPoints")
 
         pathPoints.last().add(latLng)
 
         pathPointsFlow.emit(pathPoints)
+        stateFlow.value = pathPoints
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Timber.d("service was destroyed")
+        serviceScope.cancel()
     }
 
     inner class TrackingServiceBinder : Binder() {
         fun getBoundService(): TrackingService = this@TrackingService
     }
-}
-
-enum class TrackingServiceState {
-    ACTION_START_OR_RESUME_SERVICE,
-    ACTION_PAUSE_SERVICE,
-    ACTION_STOP_SERVICE
 }
