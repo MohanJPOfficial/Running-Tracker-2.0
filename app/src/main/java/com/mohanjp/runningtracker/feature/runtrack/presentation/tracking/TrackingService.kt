@@ -16,6 +16,7 @@ import com.mohanjp.runningtracker.core.utils.stopwatch.StopwatchFormat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -38,6 +39,9 @@ class TrackingService : Service() {
 
     val isTracking = MutableStateFlow(false)
     val pathPointsFlow = MutableSharedFlow<Polylines>()
+
+    val stateFlow = MutableStateFlow(mutableListOf<Polyline>())
+
     val stopWatchTimer = MutableStateFlow(StopwatchFormat())
 
     private val trackerNotification: NotificationService by lazy {
@@ -52,7 +56,7 @@ class TrackingService : Service() {
         RunningTrackerStopWatch(scope = serviceScope)
     }
 
-    var isFirstRun = true
+    private var isFirstRun = true
 
     override fun onCreate() {
         super.onCreate()
@@ -132,6 +136,7 @@ class TrackingService : Service() {
         pathPoints.add(mutableListOf())
 
         pathPointsFlow.emit(pathPoints)
+        stateFlow.value = pathPoints
     }
 
     private suspend fun addPathPoint(location: Location) {
@@ -145,6 +150,13 @@ class TrackingService : Service() {
         pathPoints.last().add(latLng)
 
         pathPointsFlow.emit(pathPoints)
+        stateFlow.value = pathPoints
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Timber.d("service was destroyed")
+        serviceScope.cancel()
     }
 
     inner class TrackingServiceBinder : Binder() {

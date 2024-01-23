@@ -1,30 +1,35 @@
 package com.mohanjp.runningtracker.feature.runtrack.presentation.tracking
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.graphics.Color
 import android.os.Bundle
-import android.os.IBinder
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.PolylineOptions
 import com.mohanjp.runningtracker.R
 import com.mohanjp.runningtracker.common.utils.presentation.makeGone
 import com.mohanjp.runningtracker.common.utils.presentation.makeVisible
 import com.mohanjp.runningtracker.common.utils.presentation.setOnDebounceClickListener
-import com.mohanjp.runningtracker.core.utils.stopwatch.StopwatchFormat
 import com.mohanjp.runningtracker.databinding.FragmentTrackingBinding
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
@@ -34,46 +39,23 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     private var map: GoogleMap? = null
 
-    private var isTracking = false
-    private var pathPoints = mutableListOf<Polyline>()
-
-    private val serviceConnection = object: ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as TrackingService.TrackingServiceBinder
-            val trackingService = binder.getBoundService()
-
-            trackingService.isTracking.onEach { isTracking ->
-                Timber.d("is Tracking >> $isTracking")
-                updateTracking(isTracking)
-            }.launchIn(viewLifecycleOwner.lifecycleScope)
-
-            trackingService.pathPointsFlow.onEach { polyLines ->
-                Timber.d("path points >> $polyLines")
-                pathPoints = polyLines
-                addLatestPolyline()
-                moveCameraToUser()
-            }.launchIn(viewLifecycleOwner.lifecycleScope)
-
-            trackingService.stopWatchTimer.onEach { stopwatchTimer ->
-                updateTimer(stopwatchTimer)
-            }.launchIn(viewLifecycleOwner.lifecycleScope)
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            Timber.d("Service is disconnected")
-        }
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         binding = FragmentTrackingBinding.bind(view)
         binding.mapView.onCreate(savedInstanceState)
 
-        binding.mapView.getMapAsync {
-            map = it
+        binding.mapView.getMapAsync { googleMap ->
+            map = googleMap
 
-            addAllPolyline()
+            val pathPointsFlow = viewModel.uiState.map { it.pathPoints }.distinctUntilChanged()
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                    pathPointsFlow.first().also { addAllPolyline(it) }
+                }
+            }
         }
 
         binding.bindState(
@@ -90,18 +72,68 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     ) {
         uiEvent.onEach { event ->
             when(event) {
-                TrackingUiEvent.StartOrResumeService -> {
+                is TrackingUiEvent.SendCommandToService -> {
                     sendCommandToService(
-                        action = TrackingServiceActionEnum.ACTION_START_OR_RESUME_SERVICE
+                        action = event.action
                     )
-
-                    toggleRun()
                 }
             }
         }.flowWithLifecycle(viewLifecycleOwner.lifecycle)
             .launchIn(viewLifecycleOwner.lifecycleScope)
 
+        bindPolyLines(uiState)
+
         bindClick(uiAction)
+    }
+
+    private fun FragmentTrackingBinding.bindPolyLines(
+        uiState: StateFlow<TrackingUiState>
+    ) {
+        val cameraPositionFlow = uiState.mapNotNull { it.cameraPosition }.distinctUntilChanged()
+        val latestPolylineFlow = uiState.mapNotNull { it.preLastAndLastLatLng }.distinctUntilChanged()
+        val trackingStateFlow  = uiState.map { it.trackingState }.distinctUntilChanged()
+        val toggleButtonText   = uiState.mapNotNull { it.toggleButtonText }.distinctUntilChanged()
+        val stopwatchTimerFlow = uiState.map { it.stopwatchTimer }.distinctUntilChanged()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                launch {
+                    cameraPositionFlow.collectLatest {
+                        Timber.d("camera line $it")
+                        moveCameraToUser(it)
+                    }
+                }
+
+                launch {
+                    latestPolylineFlow.collectLatest {
+                        addLatestPolyline(it)
+                    }
+                }
+
+                launch {
+                    trackingStateFlow.collectLatest { trackingState ->
+                        if(trackingState == TrackingState.TRACKING) {
+                            btnFinishRun.makeGone()
+                        } else {
+                            btnFinishRun.makeVisible()
+                        }
+                    }
+                }
+
+                launch {
+                    toggleButtonText.collectLatest {
+                        btnToggleRun.text = it.asString(requireContext())
+                    }
+                }
+
+                launch {
+                    stopwatchTimerFlow.collectLatest {
+                        updateTimer(it)
+                    }
+                }
+            }
+        }
     }
 
     private fun FragmentTrackingBinding.bindClick(uiAction: (TrackingUiAction) -> Unit) {
@@ -114,67 +146,40 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
-    private fun toggleRun() {
-        if(isTracking) {
-            sendCommandToService(TrackingServiceActionEnum.ACTION_PAUSE_SERVICE)
-        } else {
-            sendCommandToService(TrackingServiceActionEnum.ACTION_START_OR_RESUME_SERVICE)
-        }
-    }
-
-    private fun updateTracking(isTracking: Boolean) {
-        this.isTracking = isTracking
-
-        if(!isTracking) {
-            binding.apply {
-                btnToggleRun.text = requireContext().getString(R.string.start)
-                btnFinishRun.makeVisible()
-            }
-        } else {
-            binding.apply {
-                btnToggleRun.text = requireContext().getString(R.string.stop)
-                btnFinishRun.makeGone()
-            }
-        }
-    }
-
-    private fun moveCameraToUser() {
-        if(pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
-            map?.animateCamera(
-                CameraUpdateFactory.newLatLngZoom(
-                    pathPoints.last().last(),
-                    15f
-                )
+    private fun moveCameraToUser(latLng: LatLng) {
+        map?.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(
+                latLng,
+                15f
             )
-        }
+        )
     }
 
-    private fun addAllPolyline() {
+    private fun addAllPolyline(pathPoints: Polylines) {
+        Timber.d("add all >> $pathPoints")
         pathPoints.forEach { polyline ->
             val polylineOptions = PolylineOptions()
                 .color(Color.RED)
                 .width(8f)
                 .addAll(polyline)
 
+            Timber.d("isMapNull ${map == null}")
             map?.addPolyline(polylineOptions)
         }
     }
 
-    private fun addLatestPolyline() {
-        if(pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
-            val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2]
-            val lastLatLng = pathPoints.last().last()
-            val polylineOptions = PolylineOptions()
-                .color(Color.RED)
-                .width(8f)
-                .add(preLastLatLng)
-                .add(lastLatLng)
-            map?.addPolyline(polylineOptions)
-        }
+    private fun addLatestPolyline(preLastAndLastLatLng: PreLastAndLastLatLng) {
+        val polylineOptions = PolylineOptions()
+            .color(Color.RED)
+            .width(8f)
+            .add(preLastAndLastLatLng.preLastLatLng)
+            .add(preLastAndLastLatLng.lastLatLng)
+
+        map?.addPolyline(polylineOptions)
     }
 
-    private fun updateTimer(stopwatchTimer: StopwatchFormat) {
-        binding.tvTimer.text = stopwatchTimer.withMillis
+    private fun updateTimer(stopwatchTimer: String) {
+        binding.tvTimer.text = stopwatchTimer
     }
 
     private fun sendCommandToService(action: TrackingServiceActionEnum) {
@@ -187,7 +192,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     override fun onStart() {
         super.onStart()
         Intent(requireContext(), TrackingService::class.java).also {
-            requireContext().bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
+            requireContext().bindService(it, viewModel.serviceConnection, Context.BIND_AUTO_CREATE)
         }
 
         binding.mapView.onStart()
@@ -205,7 +210,8 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     override fun onStop() {
         super.onStop()
-        requireContext().unbindService(serviceConnection)
+        Timber.d("service was unbounded")
+        requireContext().unbindService(viewModel.serviceConnection)
         binding.mapView.onStop()
     }
 

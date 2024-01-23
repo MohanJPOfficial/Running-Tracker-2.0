@@ -14,6 +14,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 abstract class LocationTrackerImpl(
     private val context: Context
@@ -28,6 +29,9 @@ abstract class LocationTrackerImpl(
     }
 
     override fun startLocationTracking() {
+
+        Timber.d("started to track location")
+
         if(!context.checkHasLocationPermission()) {
             throw LocationException("missing location permissions..")
         }
@@ -48,6 +52,8 @@ abstract class LocationTrackerImpl(
     }
 
     override fun stopLocationTracking() {
+        Timber.d("stopped to track location")
+
         fusedLocationProviderClient.flushLocations()
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
     }
@@ -57,6 +63,7 @@ abstract class LocationTrackerImpl(
         locationCallback = object: LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 result.locations.lastOrNull()?.let { location ->
+                    Timber.d("newLocation $location")
                     launch { send(location) }
                 }
             }
