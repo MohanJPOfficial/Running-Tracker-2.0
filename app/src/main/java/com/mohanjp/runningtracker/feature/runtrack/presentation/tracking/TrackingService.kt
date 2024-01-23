@@ -1,8 +1,10 @@
 package com.mohanjp.runningtracker.feature.runtrack.presentation.tracking
 
+import android.app.Service
 import android.content.Intent
 import android.location.Location
-import androidx.lifecycle.LifecycleService
+import android.os.Binder
+import android.os.IBinder
 import com.google.android.gms.maps.model.LatLng
 import com.mohanjp.runningtracker.common.utils.location.LocationTracker
 import com.mohanjp.runningtracker.common.utils.location.RunningLocationTracker
@@ -11,6 +13,7 @@ import com.mohanjp.runningtracker.common.utils.notifcation.service.RunningTracke
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -22,16 +25,16 @@ import timber.log.Timber
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
 
-class TrackingService : LifecycleService() {
+class TrackingService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    companion object {
-        val isTracking = MutableStateFlow(false)
-        val pathPoints = MutableStateFlow<Polylines>(mutableListOf(mutableListOf()))
+    private val pathPoints = mutableListOf<Polyline>()
 
-        val dummy = MutableStateFlow(listOf<LatLng>())
-    }
+    private val trackingServiceBinder = TrackingServiceBinder()
+
+    val isTracking = MutableStateFlow(false)
+    val pathPointsFlow = MutableSharedFlow<Polylines>()
 
     private val trackerNotification: NotificationService by lazy {
         RunningTrackerNotificationService(this)
@@ -52,12 +55,10 @@ class TrackingService : LifecycleService() {
                 addPathPoint(location)
 
             }.launchIn(serviceScope)
+    }
 
-        serviceScope.launch {
-            pathPoints.collect {
-                Timber.d("polylines >> $it")
-            }
-        }
+    override fun onBind(intent: Intent): IBinder {
+        return trackingServiceBinder
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -88,7 +89,10 @@ class TrackingService : LifecycleService() {
 
     private fun startForegroundService() {
 
-        addEmptyPolyline()
+        serviceScope.launch {
+            addEmptyPolyline()
+        }
+
         isTracking.update { true }
 
         locationTracker.startLocationTracking()
@@ -104,36 +108,28 @@ class TrackingService : LifecycleService() {
         locationTracker.stopLocationTracking()
     }
 
-    private fun addEmptyPolyline() {
+    private suspend fun addEmptyPolyline() {
 
-        pathPoints.update {
-            it.also { list ->
-                list.add(mutableListOf())
-            }
-        }
+        pathPoints.add(mutableListOf())
+
+        pathPointsFlow.emit(pathPoints)
     }
 
-    private fun addPathPoint(location: Location) {
+    private suspend fun addPathPoint(location: Location) {
 
         val latLng = LatLng(location.latitude, location.longitude)
 
-        dummy.update {
-            it.toMutableList().also { list ->
-                list.add(latLng)
-            }.toList()
-        }
-
         Timber.d("Location update => lat = ${location.latitude}, lng = ${location.longitude}")
 
-        Timber.d("current list = ${pathPoints.value}")
+        Timber.d("current list = ${pathPoints}")
 
-        pathPoints.update {
-            pathPoints.value.apply {
-                last().also {
-                    it.add(latLng)
-                }
-            }
-        }
+        pathPoints.last().add(latLng)
+
+        pathPointsFlow.emit(pathPoints)
+    }
+
+    inner class TrackingServiceBinder : Binder() {
+        fun getBoundService(): TrackingService = this@TrackingService
     }
 }
 
